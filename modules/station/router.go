@@ -41,7 +41,7 @@ func CheckSchedulesByStation(c *gin.Context, service Service) {
 		c.JSON(http.StatusBadRequest, response)
 		return
 	}
-	response := response.APIResponse("List of schedules", http.StatusOK, "success", data)
+	response := response.APIResponse("List of schedules by station", http.StatusOK, "success", data)
 	c.JSON(http.StatusOK, response)
 	return
 }

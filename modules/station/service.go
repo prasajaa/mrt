@@ -11,7 +11,7 @@ import (
 
 type Service interface {
 	GetAllStation() (response []StationResponse, err error)
-	CheckSchedulesByStation(id string) (response []StationResponse, err error)
+	CheckSchedulesByStation(id string) (response []ScheduleResponse, err error)
 }
 
 type service struct {
@@ -52,42 +52,39 @@ func (s *service) CheckSchedulesByStation(id string) (response []ScheduleRespons
 
 	byteResponse, err := client.DoRequest(s.client, url)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
-	var schedule []Schedule
-	err = json.Unmarshal(byteResponse, &schedule)
-
+	var schedules []Schedule
+	err = json.Unmarshal(byteResponse, &schedules)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 
-	var scheduleSelected Schedule
-	err = json.Unmarshal(byteResponse, &scheduleSelected)
-	for _, item := range schedule {
+	// Find schedule by station ID
+	var scheduleSelected *Schedule
+	for _, item := range schedules {
 		if item.StationId == id {
-			scheduleSelected = item
+			scheduleSelected = &item
 			break
 		}
 	}
 
-	if scheduleSelected.StationId == "" {
-		err = errors.New("Station not found")
-		return
+	if scheduleSelected == nil {
+		return nil, errors.New("station not found")
 	}
 
-	response, err = ConvertDataToResponse(scheduleSelected)
-
+	response, err = ConvertDataToResponse(*scheduleSelected)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	return
+	return response, nil
 }
 
 func ConvertDataToResponse(schedule Schedule) (response []ScheduleResponse, err error) {
 	var (
-		LebakBulusTripName = "Stasiun Lebak Bulus Grab"
+		LebakBulusTripName = "Stasiun Lebak Bulus"
 		BundaranHITripName = "Stasiun Bundaran HI Bank DKI"
 	)
 
@@ -105,7 +102,7 @@ func ConvertDataToResponse(schedule Schedule) (response []ScheduleResponse, err 
 
 	//convert to response
 	for _, item := range ScheduleLebakBulusParsed {
-		if item.Format("15:04") > time.Now().Format("15:04") {
+		if item.After(time.Now()) {
 			response = append(response, ScheduleResponse{
 				StationName: LebakBulusTripName,
 				Time:        item.Format("15:04"),
@@ -114,12 +111,19 @@ func ConvertDataToResponse(schedule Schedule) (response []ScheduleResponse, err 
 	}
 
 	for _, item := range ScheduleBundaranHIParsed {
-		if item.Format("15:04") > time.Now().Format("15:04") {
+		if item.After(time.Now()) {
 			response = append(response, ScheduleResponse{
 				StationName: BundaranHITripName,
 				Time:        item.Format("15:04"),
 			})
 		}
+	}
+
+	if response == nil {
+		response = append(response, ScheduleResponse{
+			Message: "No schedule for today",
+		})
+		return
 	}
 
 	return

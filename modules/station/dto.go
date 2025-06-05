@@ -13,11 +13,12 @@ type StationResponse struct {
 type Schedule struct {
 	StationId          string `json:"nid"`
 	StationName        string `json:"title"`
-	ScheduleBunderanHI string `json:"schedule_hi_biasa"`
-	ScheduleLebakBulus string `json:"schedule_lb_biasa"`
+	ScheduleBunderanHI string `json:"jadwal_hi_biasa"`
+	ScheduleLebakBulus string `json:"jadwal_lb_biasa"`
 }
 
 type ScheduleResponse struct {
-	StationName string `json:"station"`
-	Time        string `json:"time"`
+	StationName string `json:"station,,omitempty"`
+	Time        string `json:"time,,omitempty"`
+	Message     string `json:"message,,omitempty"`
 }
